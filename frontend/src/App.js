@@ -16,14 +16,18 @@ function App() {
       });
     
     setServerMsg(response.data.message);
-    console.log("Response from server:", response.data);
-
-    } catch (error) {
-      if (error.response) {
-        setServerMsg(error.response.data.message);
-      } else { 
+    
+  } catch (error) {
+    if (error.response && error.response.data) {
+        console.log("Response from server:", error.response.data);
+        
+        const errorText = error.response.data.msg || error.response.data.message || "Login failed";
+        setServerMsg(errorText);
+    } else if(error.request){ 
         setServerMsg("Cannot connect to server.");
-      }
+    } else {
+      setServerMsg("Error.")
+    }
     }
   };
 
@@ -71,7 +75,7 @@ function App() {
               Forgot Password?
             </button>
             
-            <div className="message" style= {{ color: serverMsg.includes("successful") ? "green" : "red" }}>
+            <div className="message" style= {{ color: serverMsg && serverMsg.includes("successful") ? "green" : "red" }}>
               {serverMsg}
             </div>
       </div>
