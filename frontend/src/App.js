@@ -9,6 +9,14 @@ function App() {
   const[serverMsg, setServerMsg] = useState("");
 
   const handleLogin = async () => {
+    if(!inputId) {
+      setServerMsg("Please insert ID");
+      return;
+    }
+    if(!inputPw) {
+      setServerMsg("Please insert Password");
+      return;
+    }
     try {
       const response = await axios.post("http://127.0.0.1:5000/api/login", {
         userid: inputId,
