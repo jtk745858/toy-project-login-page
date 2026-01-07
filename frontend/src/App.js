@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './App.css';
 
 function App() {
   // State to store ID and Password inputs
@@ -26,28 +27,55 @@ function App() {
     }
   };
 
+  const handleForgotPw = () => {
+    alert("Ask the administrator to reset your password.")
+  }
   return (
-    <div style= {{ textAlign: "center", marginTop: "50px"}}>
-      <h1>Login</h1>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
-        <input
-          type="text"
-          placeholder="ID"
-          value={inputId}
-          onChange={(e) => setInputId(e.target.value)}
-          style={{ padding: "10px", width: "200px" }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={inputPw}
-          onChange={(e) => setInputPw(e.target.value)}
-          style={{ padding: "10px", width: "200px" }}
-        />
-        <button onClick={handleLogin} style={{ padding: "10px 20px", cursor: "pointer" }}>Login</button>
-      </div>
+    <div className="background">
+     <div className = "app-container">
+      <div className="login-card">
+        <h2>Login</h2>
 
-      <h3 style={{ marginTop: "20px", color: "blue" }}>{serverMsg}</h3>
+        <div className="input-group">
+          <label htmlFor="userid"></label>
+          <input
+            className="input-field"
+            type = "text"
+            placeholder="User ID"
+            value={inputId}
+            onChange={(e) => setInputId(e.target.value)}
+            />
+            </div>
+
+            <div className = "input-group">
+              <input
+                className="input-field"
+                type = "password"
+                placeholder="Password"
+                value={inputPw}
+                onChange={(e) => setInputPw(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleLogin();
+                  }
+                }
+              }
+              />
+            </div>
+
+            <button className="login-btn" onClick={handleLogin}>
+              Sign In
+            </button>
+
+            <button className="forgot-btn" onClick={handleForgotPw}>
+              Forgot Password?
+            </button>
+            
+            <div className="message" style= {{ color: serverMsg.includes("successful") ? "green" : "red" }}>
+              {serverMsg}
+            </div>
+      </div>
+      </div>
     </div>
   );
 }
