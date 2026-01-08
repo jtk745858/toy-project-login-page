@@ -7,6 +7,8 @@ function App() {
   const[inputId, setInputId] = useState("");
   const[inputPw, setInputPw] = useState("");
 
+  const[inputEmail, setInputEmail] = useState("");
+  const[confirmPw, setConfirmPw] = useState("");
   // Response msg from server
   const[serverMsg, setServerMsg] = useState("");
 
@@ -19,6 +21,20 @@ function App() {
       setServerMsg("Please Enter ID and Password");
       return;
   }
+  if (isRegister) {
+    if(!inputEmail) {
+      setServerMsg("Please Enter your Email");
+      return;
+    }
+    if(inputPw.length < 8) {
+      setServerMsg("Password must be at least 8 characters");
+      return;
+    }
+    if(inputPw !== confirmPw) {
+      setServerMsg("Passwords do not match!");
+      return;
+    }
+  }
   
   
   // Determine the Endpoint to send based on the current mode
@@ -26,11 +42,13 @@ function App() {
   const apiUrl = `http://127.0.0.1:5000${endpoint}`;
 
   try {
-    // transport data to server(app.py)
-    const response = await axios.post(apiUrl,{
+    const requestData = {
       userid: inputId,
-      userpw: inputPw
-    });
+      userpw: inputPw,
+      ...(isRegister && { email: inputEmail })
+    };
+    // transport data to server(app.py)
+    const response = await axios.post(apiUrl,requestData);
     // Process success response
     console.log("Server response",response);
     console.log("Server data",response.data);
@@ -46,6 +64,8 @@ function App() {
           // empty input windows
           setInputId("");
           setInputPw("");
+          setInputEmail("");
+          setConfirmPw("");
         }, 1000);
       } 
     } else {
@@ -68,6 +88,8 @@ const toggleMode = () => {
   // empty input window
   setInputId("");
   setInputPw("");
+  setInputEmail("");
+  setConfirmPw("");
   };
 
 const handleForgotPw = () => {
@@ -92,7 +114,19 @@ const handleForgotPw = () => {
             onChange={(e) => setInputId(e.target.value)}
             />
             </div>
-
+            {/* email input window*/}
+            {isRegister && (
+              <div className='input-group'>
+                <input
+                  className="input-field"
+                  type='email'
+                  placeholder='Email Address'
+                  value={inputEmail}
+                  onChange={(e) => setInputEmail(e.target.value)}
+                  />
+                </div>
+            )}
+            {/*password input windows*/}
             <div className = "input-group">
               <input
                 className="input-field"
@@ -100,9 +134,24 @@ const handleForgotPw = () => {
                 placeholder="Password"
                 value={inputPw}
                 onChange={(e) => setInputPw(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
               />
             </div>
+            {isRegister && (
+              <div className='input-group'>
+                <input
+                  className='input-field'
+                  type='password'
+                  placeholder='Confirm password'
+                  value={confirmPw}
+                  onChange={(e) => setConfirmPw(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                  />
+                  </div>
+            )}
+            {!isRegister && (
+              <div style={{display: 'none'}}>
+                </div>
+            )}
             {/* Button: Switch button and color according to mode */}
             <button 
             className="login-btn" 
@@ -122,11 +171,11 @@ const handleForgotPw = () => {
                   {isRegister ? "Login" : "Sign up"}
                 </span>
               </p>
-
+            {!isRegister && (
             <button className="forgot-btn" onClick={handleForgotPw}>
               Forgot Password?
             </button>
-            
+            )}
             <div className="message" style= {{ color: serverMsg && serverMsg.includes("✅") ? "green" : "red" }}>
               {serverMsg}
             </div>

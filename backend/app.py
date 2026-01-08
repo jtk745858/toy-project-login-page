@@ -12,16 +12,19 @@ def register():
     data = request.get_json()
     user_id = data.get("userid") # id from frontend
     user_pw = data.get("userpw") # pw from frontend
+    user_email = data.get("email") # email from frontend
     
-    if not user_id or not user_pw:
-        return jsonify({"msg": "Please Enter your ID or Password"})
-    
+    if not user_id or not user_pw or not user_email:
+        return jsonify({"msg": "Please Enter your ID or Password or email"}), 400
+    if len(user_pw) < 8:
+        return jsonify({"msg": "Password must be at least 8 characters long."}), 400
     hashed_pw = generate_password_hash(user_pw)
     
     try:
         response = supabase.table('Users').insert({
             "username": user_id,
-            "password": hashed_pw
+            "password": hashed_pw,
+            "email" : user_email
         }).execute()
         
         return jsonify({"msg": "Sign up success! Please login.", "result": "success"}), 201
