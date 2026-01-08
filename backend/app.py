@@ -2,10 +2,15 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from db_client import supabase
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)
 
+login_attempts = {}
+
+MAX_RETRIES = 5
+BLOCK_TIME = 60 
 # [API] Register
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -43,7 +48,16 @@ def login():
     # =============================================
     input_id = data.get('userid') # id from frontend
     input_pw = data.get('userpw') # pw from frontend
-    
+    if input_id in login_attempts:
+        attempt_info = login_attempts[input_id]
+        
+        if attempt_info['lock_until'] and datetime.now() < attempt_info['lock_until']:
+            remaining_time = (attempt_info['lock_until'] - datetime.now()).seconds
+            return jsonify({
+                "msg":f"Account locked due to too many failed attempts. Try again in {remaining_time} seconds.","result" : "fail"
+            }), 429
+        if attempt_info['lock_until'] and datetime.now() >= attempt_info['lock_until']:
+            login_attempts[input_id] = {"attempts":0,"lock_until": None}
     try:
         # Search to username column in User table
         response = supabase.table('Users').select("*").eq("username", input_id).execute()
@@ -55,8 +69,21 @@ def login():
         
     # Compare userpassword with password column in DB
         if check_password_hash(user['password'], input_pw):
+            if input_id in login_attempts:
+                del login_attempts[input_id]
             return jsonify({"msg":f"welcome, {input_id}.","result": "success"}), 200
         else:
+            if input_id not in login_attempts:
+                login_attempts[input_id] = {"attempts": 0,"lock_until": None}
+            login_attempts[input_id]["attempts"] += 1
+            
+            if login_attempts[input_id]["attempts"] >= MAX_RETRIES:
+                login_attempts[input_id]["lock_until"] = datetime.now() + timedelta(seconds=BLOCK_TIME)
+                remaining_time = BLOCK_TIME
+                return jsonify({
+                    "msg": f"Too many failed attempts. Locked for {BLOCK_TIME} seconds.",
+                    "result": "fail"
+                }), 429
             return jsonify({"msg": "Wrong password.","result": ":fail"}), 401       
     
     except Exception as e:
