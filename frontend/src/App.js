@@ -1,59 +1,93 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css';
-
+// ✅
 function App() {
   // State to store ID and Password inputs
   const[inputId, setInputId] = useState("");
   const[inputPw, setInputPw] = useState("");
+
+  // Response msg from server
   const[serverMsg, setServerMsg] = useState("");
 
-  const handleLogin = async () => {
-    if(!inputId) {
-      setServerMsg("Please insert ID");
+  // switch: Judging whether current page is login page or register page.
+  // flase == login page, true == register page
+  const [isRegister, setIsRegister] = useState(false);
+
+  const handleSubmit = async() => {
+    if (!inputId || !inputPw) {
+      setServerMsg("Please Enter ID and Password");
       return;
-    }
-    if(!inputPw) {
-      setServerMsg("Please insert Password");
-      return;
-    }
-    try {
-      const response = await axios.post("http://127.0.0.1:5000/api/login", {
-        userid: inputId,
-        userpw: inputPw
-      });
-    
-    setServerMsg(response.data.message);
-    
-  } catch (error) {
-    if (error.response && error.response.data) {
-        console.log("Response from server:", error.response.data);
-        
-        const errorText = error.response.data.msg || error.response.data.message || "Login failed";
-        setServerMsg(errorText);
-    } else if(error.request){ 
-        setServerMsg("Cannot connect to server.");
+  }
+  
+  
+  // Determine the Endpoint to send based on the current mode
+  const endpoint = isRegister ? "/api/register" : "/api/login";
+  const apiUrl = `http://127.0.0.1:5000${endpoint}`;
+
+  try {
+    // transport data to server(app.py)
+    const response = await axios.post(apiUrl,{
+      userid: inputId,
+      userpw: inputPw
+    });
+    // Process success response
+    console.log("Server response",response);
+    console.log("Server data",response.data);
+    if(response.data && response.data.result === "success") {
+      setServerMsg("✅ " + response.data.msg);
+
+      //if success register -> Automatically switch to login screen after 1.5 sec
+      if (isRegister){
+        setTimeout(() => {
+          setIsRegister(false); // Switch to login mode
+          setServerMsg("✅ Sign up complete! Now you can login");
+          
+          // empty input windows
+          setInputId("");
+          setInputPw("");
+        }, 1000);
+      } 
     } else {
-      setServerMsg("Error.")
+        setServerMsg("❌ " + (response.data.msg || "Operation failed"))
     }
+  } catch (error) {
+    // process fail response (401, 409 error etc.)
+    console.error("Error:",error);
+    if(error.response && error.response.data) {
+      setServerMsg("❌ " + (error.response.data.message || "Error"));
+    } else {
+      setServerMsg("❌ Cannot connect to Server");
     }
+  }
+};
+  
+const toggleMode = () => {
+  setIsRegister(!isRegister); // reverse true <-> false
+  setServerMsg(""); // clean message
+  // empty input window
+  setInputId("");
+  setInputPw("");
   };
 
-  const handleForgotPw = () => {
-    alert("Ask the administrator to reset your password.")
-  }
+const handleForgotPw = () => {
+  alert("Contact the administrator");
+}
+
   return (
     <div className="background">
      <div className = "app-container">
       <div className="login-card">
-        <h2>Login</h2>
-
+        {/* switch h2 according to mode */}
+        <h2 className='login-header'>
+          {isRegister ? "Create Account" : "Welcome Back"}
+        </h2>
+        {/* Input Windows */}
         <div className="input-group">
-          <label htmlFor="userid"></label>
           <input
             className="input-field"
             type = "text"
-            placeholder="User ID"
+            placeholder="Username"
             value={inputId}
             onChange={(e) => setInputId(e.target.value)}
             />
@@ -66,24 +100,34 @@ function App() {
                 placeholder="Password"
                 value={inputPw}
                 onChange={(e) => setInputPw(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleLogin();
-                  }
-                }
-              }
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
               />
             </div>
+            {/* Button: Switch button and color according to mode */}
+            <button 
+            className="login-btn" 
+            onClick={handleSubmit}
+            style = {{ backgroundColor: isRegister ? "#28a745" : "#4a90e2" }} // Regiser : green, Login : blue
+            >
+              {isRegister ? "Sign up" : "Login"}  
+              </button>
 
-            <button className="login-btn" onClick={handleLogin}>
-              Sign In
-            </button>
+            {/* Switch link: if clicked -> change mode */}
+            <p style={{ marginTop: "15px", fontSize: "14px", color: "#666" }}>
+              {isRegister ? "I already have account.. " : "I don't have account.. "}
+              <span
+                onClick = {toggleMode}
+                style={{ color: "#4a90e2", cursor: "pointer", fontWeight: "bold", textDecoration: "underline" }}
+                >
+                  {isRegister ? "Login" : "Sign up"}
+                </span>
+              </p>
 
             <button className="forgot-btn" onClick={handleForgotPw}>
               Forgot Password?
             </button>
             
-            <div className="message" style= {{ color: serverMsg && serverMsg.includes("successful") ? "green" : "red" }}>
+            <div className="message" style= {{ color: serverMsg && serverMsg.includes("✅") ? "green" : "red" }}>
               {serverMsg}
             </div>
       </div>
