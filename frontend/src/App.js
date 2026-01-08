@@ -75,7 +75,7 @@ function App() {
     // process fail response (401, 409 error etc.)
     console.error("Error:",error);
     if(error.response && error.response.data) {
-      setServerMsg("❌ " + (error.response.data.message || "Error"));
+      setServerMsg("❌ " + (error.response.data.msg || "Error"));
     } else {
       setServerMsg("❌ Cannot connect to Server");
     }
